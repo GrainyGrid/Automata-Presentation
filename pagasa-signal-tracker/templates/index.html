@@ -4,16 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PAGASA Signal Tracker — PDA Lifecycle Verifier</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Tropical Cyclone Wind Signal Bulletin — PDA Lifecycle Verifier</title>
+    <meta name="description"
+        content="Educational simulation of PAGASA Tropical Cyclone Wind Signal lifecycle verification using a Pushdown Automaton. Not an official PAGASA product.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
 </head>
 
 <body>
     <header class="app-header">
-        <div class="header-top">
-            <div class="brand">
-                <h1>PAGASA Signal Tracker</h1>
-                <span class="subtitle">Pushdown Automaton (PDA) Tropical Cyclone Wind Signal Lifecycle Verifier</span>
+        <div class="header-inner">
+            <div class="header-brand">
+                <h1>TROPICAL CYCLONE WIND SIGNAL BULLETIN</h1>
+                <span class="header-subtitle">Pushdown Automaton Lifecycle Verifier &mdash; Educational
+                    Simulation</span>
             </div>
             <div class="locality-box">
                 <label for="locality-input">Locality:</label>
@@ -21,358 +24,204 @@
                     placeholder="Enter municipality / city">
             </div>
         </div>
-        <div class="disclaimer" role="note">
-            <strong>Disclaimer:</strong> Educational demo based on PAGASA's published wind thresholds. Not an official
-            warning source. Always follow official PAGASA bulletins.
+        <div class="notice-bar" role="note">
+            Educational simulation. Not an official PAGASA product. Always follow official PAGASA bulletins.
         </div>
     </header>
 
     <main class="main-grid">
-        <!-- Left Column: Controls, Timeline Table, Wind Chart -->
+        <!-- Left Column -->
         <section class="left-col">
-            <!-- Control Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Log Wind Bulletin</h2>
-                    <span id="sample-badge" class="sample-badge hidden">Fictional sample, not real data</span>
+
+            <!-- Simulation Controls Panel -->
+            <div class="panel">
+                <div class="panel-heading">
+                    <span>Storm Evaluation</span>
+                    <span id="sim-phase-badge" class="sample-label">Ready</span>
                 </div>
-                <form id="bulletin-form" class="bulletin-form" novalidate>
-                    <div class="form-group">
-                        <label for="dt-input">Bulletin Date-Time</label>
-                        <input type="datetime-local" id="dt-input" required>
+                <div class="panel-body">
+                    <div class="sim-description">
+                        <p>Evaluation of a full tropical cyclone lifecycle. Wind speeds escalate through
+                            Signals&nbsp;1–5, then de-escalate back to calm.</p>
                     </div>
-                    <div class="form-group">
-                        <label for="wind-input">Max Sustained Wind (km/h)</label>
-                        <input type="number" id="wind-input" min="0" step="1" placeholder="e.g. 45" required>
+                    <div class="sim-progress-wrap">
+                        <div class="sim-progress-track">
+                            <div id="sim-progress-bar" class="sim-progress-bar" style="width:0%"></div>
+                        </div>
+                        <span id="sim-step-label" class="sim-step-label">Step 0 / 0</span>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">+ Add Bulletin</button>
-                        <button type="button" id="btn-delete-last" class="btn btn-secondary">Delete Last</button>
-                        <button type="button" id="btn-clear" class="btn btn-danger">Clear All</button>
-                        <button type="button" id="btn-sample" class="btn btn-accent">Load sample scenario</button>
+                        <button type="button" id="btn-play" class="btn btn-primary">&#9654; Play</button>
+                        <button type="button" id="btn-step" class="btn btn-secondary">Step Forward</button>
+                        <button type="button" id="btn-reset" class="btn btn-secondary">Reset</button>
                     </div>
-                </form>
-                <p id="form-error" class="form-error hidden" role="alert"></p>
-            </div>
-
-            <!-- Wind Chart Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Wind Speed Progression &amp; Signal Thresholds</h2>
-                    <span class="chart-caption">Dashed lines show PAGASA wind thresholds (39, 62, 89, 118, 185
-                        km/h)</span>
-                </div>
-                <div class="svg-container">
-                    <svg id="wind-chart-svg" viewBox="0 0 720 250" aria-label="Wind speed progression chart"></svg>
+                    <div class="speed-row">
+                        <label for="speed-select">Playback Speed:</label>
+                        <select id="speed-select">
+                            <option value="1800">Slow (1.8 s/step)</option>
+                            <option value="1000" selected>Normal (1 s/step)</option>
+                            <option value="500">Fast (0.5 s/step)</option>
+                            <option value="200">Very Fast (0.2 s/step)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <!-- Timeline Table Card -->
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <h2>Bulletin History Timeline</h2>
-                        <span class="table-hint">Click any row to inspect the PDA state and stack immediately after that
-                            bulletin.</span>
-                    </div>
-                    <button type="button" id="btn-export-csv" class="btn btn-secondary">Export CSV</button>
-                </div>
-                <div class="table-responsive">
-                    <table id="timeline-table" class="timeline-table">
+            <!-- Wind Signal Reference -->
+            <div class="panel">
+                <div class="panel-heading">Wind Signal Reference</div>
+                <div class="panel-body">
+                    <table class="ref-table">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th>Date-Time</th>
-                                <th>Wind Speed</th>
-                                <th>Signal</th>
-                                <th>Status</th>
-                                <th>PDA State</th>
-                                <th>Stack (Bottom &rarr; Top)</th>
+                                <th>Signal No.</th>
+                                <th>Max Sustained Winds</th>
+                                <th>Indicator</th>
                             </tr>
                         </thead>
-                        <tbody id="timeline-tbody">
+                        <tbody>
                             <tr>
-                                <td colspan="7" class="empty-row">No bulletins logged yet. Add a reading or click "Load
-                                    sample scenario".</td>
+                                <td>No Signal</td>
+                                <td>Below 39 km/h</td>
+                                <td><span class="sig-swatch sig-0">No Tropical Cyclone Wind Signal</span></td>
+                            </tr>
+                            <tr>
+                                <td>Wind Signal No. 1</td>
+                                <td>39 &ndash; 61 km/h</td>
+                                <td><span class="sig-swatch sig-1">Wind Signal No. 1</span></td>
+                            </tr>
+                            <tr>
+                                <td>Wind Signal No. 2</td>
+                                <td>62 &ndash; 88 km/h</td>
+                                <td><span class="sig-swatch sig-2">Wind Signal No. 2</span></td>
+                            </tr>
+                            <tr>
+                                <td>Wind Signal No. 3</td>
+                                <td>89 &ndash; 117 km/h</td>
+                                <td><span class="sig-swatch sig-3">Wind Signal No. 3</span></td>
+                            </tr>
+                            <tr>
+                                <td>Wind Signal No. 4</td>
+                                <td>118 &ndash; 184 km/h</td>
+                                <td><span class="sig-swatch sig-4">Wind Signal No. 4</span></td>
+                            </tr>
+                            <tr>
+                                <td>Wind Signal No. 5</td>
+                                <td>185 km/h and above</td>
+                                <td><span class="sig-swatch sig-5">Wind Signal No. 5</span></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <!-- Wind Chart -->
+            <figure class="panel chart-figure">
+                <div class="panel-heading">Wind Speed Progression</div>
+                <div class="panel-body">
+                    <div class="svg-container">
+                        <svg id="wind-chart-svg" viewBox="0 0 720 260" aria-label="Wind speed progression chart"></svg>
+                    </div>
+                    <figcaption class="fig-caption">Wind speed progression &mdash; max sustained winds (km/h). Dashed
+                        lines: PAGASA thresholds at 39, 62, 89, 118, 185 km/h.</figcaption>
+                </div>
+            </figure>
+
+            <!-- Timeline Table -->
+            <div class="panel">
+                <div class="panel-heading">
+                    <span>Bulletin History Timeline</span>
+                    <button type="button" id="btn-export-csv" class="btn btn-secondary btn-sm">Export CSV</button>
+                </div>
+                <div class="panel-body panel-body--flush">
+                    <p class="table-hint">Click any row to inspect the PDA state immediately after that bulletin.</p>
+                    <div class="table-responsive">
+                        <table id="timeline-table" class="timeline-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Issued</th>
+                                    <th>Wind Speed</th>
+                                    <th>Signal</th>
+                                    <th>Status</th>
+                                    <th>PDA State</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timeline-tbody">
+                                <tr>
+                                    <td colspan="6" class="empty-row">Press Play or Step Forward to begin the
+                                        simulation.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </section>
 
-        <!-- Right Column: Live Status, Stack, PDA Diagram, Summary -->
+        <!-- Right Column -->
         <aside class="right-col">
-            <!-- Summary Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Storm Lifecycle Summary</h2>
-                </div>
-                <div class="summary-grid">
-                    <div class="metric-box">
-                        <span class="metric-label">Peak Signal</span>
-                        <strong id="sum-peak" class="metric-value">Signal 0</strong>
-                    </div>
-                    <div class="metric-box">
-                        <span class="metric-label">Escalations</span>
-                        <strong id="sum-esc" class="metric-value">0</strong>
-                    </div>
-                    <div class="metric-box">
-                        <span class="metric-label">De-escalations</span>
-                        <strong id="sum-deesc" class="metric-value">0</strong>
-                    </div>
-                    <div class="metric-box">
-                        <span class="metric-label">Lifecycle Complete?</span>
-                        <strong id="sum-complete" class="metric-value status-yes">Yes (Idle)</strong>
-                    </div>
-                </div>
-                <div id="sum-reason-box" class="reason-box hidden" role="status">
-                    <strong>Note:</strong> <span id="sum-reason-text"></span>
-                </div>
-            </div>
 
-            <!-- Live Status & Vertical Stack Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>PDA Configuration Inspector</h2>
-                    <span id="inspector-mode-badge" class="inspector-badge">Live (Latest)</span>
-                </div>
-                <div class="live-status-layout">
-                    <div class="live-metrics">
-                        <div class="live-stat">
-                            <span class="stat-label">Inspected Bulletin</span>
-                            <strong id="live-bulletin-num">None</strong>
-                        </div>
-                        <div class="live-stat">
-                            <span class="stat-label">Active Signal</span>
-                            <strong id="live-signal">No Signal (0)</strong>
-                        </div>
-                        <div class="live-stat">
-                            <span class="stat-label">PDA State</span>
-                            <strong id="live-state" class="state-pill">q0 (Idle / Finished)</strong>
-                        </div>
-                    </div>
-                    <div class="stack-panel">
-                        <span class="stack-title">PDA Stack (Z0 at bottom)</span>
-                        <div id="stack-visual" class="stack-visual">
-                            <div class="stack-empty">Empty Stack (&epsilon;)</div>
-                        </div>
+            <!-- Storm Lifecycle Summary -->
+            <div class="panel">
+                <div class="panel-heading">Storm Lifecycle Summary</div>
+                <div class="panel-body">
+                    <table class="summary-table">
+                        <tbody>
+                            <tr>
+                                <td class="sum-label">Peak Signal</td>
+                                <td><strong id="sum-peak">No Signal (0)</strong></td>
+                                <td class="sum-label">Escalations</td>
+                                <td><strong id="sum-esc">0</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="sum-label">Lifecycle Complete</td>
+                                <td><strong id="sum-complete" class="status-yes">Yes (Idle)</strong></td>
+                                <td class="sum-label">De-escalations</td>
+                                <td><strong id="sum-deesc">0</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="sum-reason-box" class="reason-box hidden" role="status">
+                        <strong>Note:</strong> <span id="sum-reason-text"></span>
                     </div>
                 </div>
             </div>
 
-            <!-- Compact PDA Diagram Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Pushdown Automaton Diagram</h2>
-                    <span class="diagram-hint">Top: q0 &rarr; q3 | Bottom: q7 &larr; q4</span>
+            <!-- PDA Configuration Inspector -->
+            <div class="panel">
+                <div class="panel-heading">
+                    <span>PDA Configuration Inspector</span>
+                    <span id="inspector-mode-badge" class="inspector-label">Idle (Start)</span>
                 </div>
-                <div class="svg-container">
-                    <!-- Two-row layout matching the specification diagram: q0-q3 on top, q7-q4 on bottom -->
-                    <svg id="pda-diagram-svg" viewBox="0 0 680 310" aria-label="Pushdown Automaton State Diagram">
-                        <defs>
-                            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
-                                orient="auto-start-reverse">
-                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569" />
-                            </marker>
-                            <marker id="arrow-active" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
-                                markerHeight="7" orient="auto-start-reverse">
-                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
-                            </marker>
-                        </defs>
-
-                        <!-- Start arrow into q0 -->
-                        <line x1="25" y1="85" x2="66" y2="85" stroke="#475569" stroke-width="2"
-                            marker-end="url(#arrow)" />
-
-                        <!-- T01 & T02: q0 <-> q1 -->
-                        <g class="pda-edge" data-edge="T01">
-                            <line x1="132" y1="77" x2="218" y2="77" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="175" y="70" text-anchor="middle" class="edge-label">&epsilon;, &epsilon; &rarr;
-                                Z0</text>
-                        </g>
-                        <g class="pda-edge" data-edge="T02">
-                            <line x1="218" y1="95" x2="132" y2="95" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="175" y="110" text-anchor="middle" class="edge-label">&epsilon;, Z0 &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T03 & T04: q1 <-> q2 -->
-                        <g class="pda-edge" data-edge="T03">
-                            <line x1="282" y1="77" x2="378" y2="77" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="330" y="70" text-anchor="middle" class="edge-label">0-38, &epsilon; &rarr; 0</text>
-                        </g>
-                        <g class="pda-edge" data-edge="T04">
-                            <line x1="378" y1="95" x2="282" y2="95" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="330" y="110" text-anchor="middle" class="edge-label">&epsilon;, 0 &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T05: q2 self-loop -->
-                        <g class="pda-edge" data-edge="T05">
-                            <path d="M 395 57 C 385 15, 435 15, 425 57" fill="none" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="410" y="18" text-anchor="middle" class="edge-label">0-38, &epsilon; &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T06 & T07: q2 <-> q3 -->
-                        <g class="pda-edge" data-edge="T06">
-                            <line x1="442" y1="77" x2="538" y2="77" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="490" y="70" text-anchor="middle" class="edge-label">39-61, &epsilon; &rarr;
-                                1</text>
-                        </g>
-                        <g class="pda-edge" data-edge="T07">
-                            <line x1="538" y1="95" x2="442" y2="95" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="490" y="110" text-anchor="middle" class="edge-label">0-38, 1 &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T08: q3 self-loop -->
-                        <g class="pda-edge" data-edge="T08">
-                            <path d="M 555 57 C 545 15, 595 15, 585 57" fill="none" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="570" y="18" text-anchor="middle" class="edge-label">39-61, &epsilon; &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T09 & T10: q3 <-> q4 (vertical) -->
-                        <g class="pda-edge" data-edge="T09">
-                            <line x1="580" y1="116" x2="580" y2="208" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="625" y="165" text-anchor="middle" class="edge-label">62-88, &epsilon; &rarr;
-                                2</text>
-                        </g>
-                        <g class="pda-edge" data-edge="T10">
-                            <line x1="560" y1="208" x2="560" y2="116" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="515" y="165" text-anchor="middle" class="edge-label">39-61, 2 &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T11: q4 self-loop -->
-                        <g class="pda-edge" data-edge="T11">
-                            <path d="M 600 228 C 645 215, 645 265, 600 252" fill="none" stroke="#475569"
-                                stroke-width="1.8" marker-end="url(#arrow)" />
-                            <text x="615" y="288" text-anchor="middle" class="edge-label">62-88, &epsilon; &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T12 & T13: q4 <-> q5 -->
-                        <g class="pda-edge" data-edge="T12">
-                            <line x1="538" y1="232" x2="442" y2="232" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="490" y="224" text-anchor="middle" class="edge-label">89-117, &epsilon; &rarr;
-                                3</text>
-                        </g>
-                        <g class="pda-edge" data-edge="T13">
-                            <line x1="442" y1="250" x2="538" y2="250" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="490" y="266" text-anchor="middle" class="edge-label">62-88, 3 &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T14: q5 self-loop -->
-                        <g class="pda-edge" data-edge="T14">
-                            <path d="M 395 212 C 385 170, 435 170, 425 212" fill="none" stroke="#475569"
-                                stroke-width="1.8" marker-end="url(#arrow)" />
-                            <text x="410" y="172" text-anchor="middle" class="edge-label">89-117, &epsilon; &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T15 & T16: q5 <-> q6 -->
-                        <g class="pda-edge" data-edge="T15">
-                            <line x1="378" y1="232" x2="282" y2="232" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="330" y="224" text-anchor="middle" class="edge-label">118-184, &epsilon; &rarr;
-                                4</text>
-                        </g>
-                        <g class="pda-edge" data-edge="T16">
-                            <line x1="282" y1="250" x2="378" y2="250" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="330" y="266" text-anchor="middle" class="edge-label">89-117, 4 &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T17: q6 self-loop -->
-                        <g class="pda-edge" data-edge="T17">
-                            <path d="M 235 212 C 225 170, 275 170, 265 212" fill="none" stroke="#475569"
-                                stroke-width="1.8" marker-end="url(#arrow)" />
-                            <text x="250" y="172" text-anchor="middle" class="edge-label">118-184, &epsilon; &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T18 & T19: q6 <-> q7 -->
-                        <g class="pda-edge" data-edge="T18">
-                            <line x1="218" y1="232" x2="132" y2="232" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="175" y="224" text-anchor="middle" class="edge-label">&ge;185, &epsilon; &rarr;
-                                5</text>
-                        </g>
-                        <g class="pda-edge" data-edge="T19">
-                            <line x1="132" y1="250" x2="218" y2="250" stroke="#475569" stroke-width="1.8"
-                                marker-end="url(#arrow)" />
-                            <text x="175" y="266" text-anchor="middle" class="edge-label">118-184, 5 &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- T20: q7 self-loop -->
-                        <g class="pda-edge" data-edge="T20">
-                            <path d="M 85 212 C 75 170, 125 170, 115 212" fill="none" stroke="#475569"
-                                stroke-width="1.8" marker-end="url(#arrow)" />
-                            <text x="100" y="172" text-anchor="middle" class="edge-label">&ge;185, &epsilon; &rarr;
-                                &epsilon;</text>
-                        </g>
-
-                        <!-- States Top Row: q0, q1, q2, q3 -->
-                        <g class="pda-node active-node" data-state="q0" transform="translate(100, 85)">
-                            <circle r="31" class="node-outer" />
-                            <circle r="26" class="node-inner" />
-                            <text y="5" text-anchor="middle" class="node-label">q0</text>
-                        </g>
-                        <g class="pda-node" data-state="q1" transform="translate(250, 85)">
-                            <circle r="31" class="node-outer" />
-                            <text y="5" text-anchor="middle" class="node-label">q1</text>
-                        </g>
-                        <g class="pda-node" data-state="q2" transform="translate(410, 85)">
-                            <circle r="31" class="node-outer" />
-                            <text y="5" text-anchor="middle" class="node-label">q2</text>
-                        </g>
-                        <g class="pda-node" data-state="q3" transform="translate(570, 85)">
-                            <circle r="31" class="node-outer" />
-                            <text y="5" text-anchor="middle" class="node-label">q3</text>
-                        </g>
-
-                        <!-- States Bottom Row: q7, q6, q5, q4 -->
-                        <g class="pda-node" data-state="q7" transform="translate(100, 240)">
-                            <circle r="31" class="node-outer" />
-                            <text y="5" text-anchor="middle" class="node-label">q7</text>
-                        </g>
-                        <g class="pda-node" data-state="q6" transform="translate(250, 240)">
-                            <circle r="31" class="node-outer" />
-                            <text y="5" text-anchor="middle" class="node-label">q6</text>
-                        </g>
-                        <g class="pda-node" data-state="q5" transform="translate(410, 240)">
-                            <circle r="31" class="node-outer" />
-                            <text y="5" text-anchor="middle" class="node-label">q5</text>
-                        </g>
-                        <g class="pda-node" data-state="q4" transform="translate(570, 240)">
-                            <circle r="31" class="node-outer" />
-                            <text y="5" text-anchor="middle" class="node-label">q4</text>
-                        </g>
-                    </svg>
+                <div class="panel-body">
+                    <div class="live-status-layout">
+                        <div class="live-metrics">
+                            <div class="live-stat">
+                                <span class="stat-label">Inspected Bulletin</span>
+                                <strong id="live-bulletin-num">None</strong>
+                            </div>
+                            <div class="live-stat">
+                                <span class="stat-label">Active Signal</span>
+                                <strong id="live-signal">No Signal (0)</strong>
+                            </div>
+                            <div class="live-stat">
+                                <span class="stat-label">PDA State</span>
+                                <strong id="live-state">q0 (Idle / Finished)</strong>
+                            </div>
+                            <div class="live-stat">
+                                <span class="stat-label">Wind Speed</span>
+                                <strong id="live-wind">— km/h</strong>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+
         </aside>
     </main>
 
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="{{ url_for('static', filename='app.js') }}?v=3"></script>
 </body>
 
 </html>
